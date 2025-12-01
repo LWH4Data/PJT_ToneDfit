@@ -1,0 +1,2 @@
+Error: Could not find or load main class org.opensearch.performanceanalyzer.PerformanceAnalyzerApp
+Caused by: java.lang.ClassNotFoundException: org.opensearch.performanceanalyzer.PerformanceAnalyzerApp

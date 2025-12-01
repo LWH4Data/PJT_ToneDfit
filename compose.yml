@@ -1,0 +1,88 @@
+# backend.env 환경 변수를 직접 이용해야하므로
+# docker compose --env-file backend.env up 로 컴포즈하여 실행한다.
+# docker compose --env-file backend.env down 서버 중지시에도 환경 변수를 읽어야 warn 메세지가 안 뜬다.
+# 거슬리지 않는다면 docker compose down 으로 종료해도 무방
+# EC2에 DB가 올라간다면 db 컨테이너(임시) 를 삭제하고 스크립트를 바꿔야합니다.
+
+#####################################################################
+# docker compose up 만으로 실행하여 ec2 db에 접속함 (db 컨테이너 제거)
+
+services:
+  ###################################################
+  # 1. Spring Boot API Service (backend-api)        #
+  ###################################################
+  backend-api:
+    container_name: spring-boot-server
+    build:
+      context: ./backend-api
+      dockerfile: Dockerfile 
+    ports:
+      - "8080:8080"
+    # restart: always
+    
+    env_file:
+      - ./backend.env
+      
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    #   SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:5432/${POSTGRES_DB_NAME}
+    #   SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER_NAME}
+    #   SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD_SECRET}
+      
+    # depends_on:
+    #   postgres:
+    #     condition: service_healthy
+  
+  ###################################################
+  # 2. FastAPI Service (새로 추가)
+  ###################################################
+  backend-ai:
+    container_name: fastapi-server
+    build:
+      context: ./backend-ai
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    # restart: always
+    
+    volumes:
+      - ./backend-ai:/app
+    
+    env_file:
+      - ./.env
+
+###################### 이하 DB 컨테이너 설정 스크립트 (불필요) #########################
+
+  ###################################################
+  # 3. PostgreSQL 18 Database Service (postgres) #
+  ###################################################
+
+  # postgres:
+  #   image: postgres:18-alpine 
+  #   container_name: postgres-db
+    
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql 
+      
+  #   env_file:
+  #     - ./backend.env
+      
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRES_DB_NAME}
+  #     POSTGRES_USER: ${POSTGRES_USER_NAME}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_SECRET}
+      
+  #   restart: always
+    
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER_NAME} -d ${POSTGRES_DB_NAME}"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
+
+###################################################
+# 4. Named Volumes                                #
+###################################################
+# volumes:
+#   postgres_data:
+

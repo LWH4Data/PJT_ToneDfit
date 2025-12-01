@@ -1,0 +1,46 @@
+# EC2 내부 127.0.0.1로만 포트 바인딩 → SSH 터널 통해서만 외부 접근 허용
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ec2-postgres:16.3
+    container_name: postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - ToneDfit
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB -h 127.0.0.1 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      # 영속 데이터 (호스트 보존)
+      - postgres-data:/var/lib/postgresql/data
+      # 설정 실시간 반영 원하면 config/를 바인드(이미지 기본값을 덮어씀)
+      - type: bind
+        source: ./config/postgresql.conf
+        target: /etc/postgresql/postgresql.conf
+        read_only: true
+      - type: bind
+        source: ./config/pg_hba.conf
+        target: /etc/postgresql/pg_hba.conf
+        read_only: true
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql/postgresql.conf"
+      - "-c"
+      - "hba_file=/etc/postgresql/pg_hba.conf"
+
+networks:
+  ToneDfit:
+    external: true
+    name: ToneDfit
+volumes:
+  postgres-data:
+    name: postgres-data

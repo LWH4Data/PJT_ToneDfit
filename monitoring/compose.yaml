@@ -1,0 +1,89 @@
+version: '3.8'
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+
+    environment:
+      - TZ=Asia/Seoul
+
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus/config:/etc/prometheus:ro
+      - ./prometheus/volume:/prometheus
+
+    restart: unless-stopped
+    networks:
+      - promnet
+
+  grafana:
+    image: grafana/grafana-oss:11.2.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+
+    environment:
+      - TZ=Asia/Seoul
+
+    volumes:
+      - ./grafana/volume:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    restart: unless-stopped
+    networks: [ promnet ]
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($|/)
+    restart: unless-stopped
+    networks: [ promnet ]
+
+  loki:
+    image: grafana/loki:2.9.6
+    container_name: loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    ports:
+      - "3100:3100" # 내부만 쓰면 포트 개방 필요 없음(외부 오픈 불필요)
+    volumes:
+      - ./loki/config:/etc/loki:ro
+      - ./loki/data:/loki # 로컬 디스크 저장
+    environment:
+      - TZ=Asia/Seoul
+    restart: unless-stopped
+    networks: [ promnet ]
+
+  promtail:
+    image: grafana/promtail:2.9.6
+    container_name: promtail
+    command: -config.file=/etc/promtail/promtail-config.yaml
+    volumes:
+      - ./promtail/config:/etc/promtail:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      - ./promtail/positions:/var/lib/promtail
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - TZ=Asia/Seoul
+    restart: unless-stopped
+    networks: [ promnet ]
+
+networks:
+  promnet:
+    driver: bridge

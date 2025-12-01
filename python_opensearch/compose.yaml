@@ -1,0 +1,30 @@
+services:
+  python_opensearch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: python_opensearch
+    working_dir: /app
+    networks: 
+      - ToneDfit
+    volumes:
+      - ./app:/app
+    restart: unless-stopped
+    # 리소스 락은 잠시 보류 (실제 리소스 사용량을 보고 제한 설정)
+    # mem_limit: 512m
+    # cpus: "0.50"
+    command: >
+      bash -lc "
+        if [ -f requirements.txt ]; then
+          pip install --no-cache-dir -r requirements.txt || true;
+        fi;
+        echo '[DEV] py-opensearch ready';
+        tail -f /dev/null
+      "
+    env_file:
+      - .env
+
+networks:
+  ToneDfit:
+    external: true
+    name: ${NETWORK_NAME}

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "567948016097",
+    "project_id": "tonedfit-38c4e",
+    "storage_bucket": "tonedfit-38c4e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:567948016097:android:53b43e00c49613f1ad7aa0",
+        "android_client_info": {
+          "package_name": "com.example.front"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2SXDwceCbB82As2WAbj4TkRmoGyVTeqk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:567948016097:android:8b6b38064e47da5dad7aa0",
+        "android_client_info": {
+          "package_name": "com.ssafy.tonedfit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2SXDwceCbB82As2WAbj4TkRmoGyVTeqk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

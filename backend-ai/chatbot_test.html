@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>패션 챗봇 테스트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .settings {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings label {
+            font-size: 14px;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .settings input {
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 120px;
+        }
+
+        .settings input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .api-url {
+            padding: 10px 20px;
+            background: #fff3cd;
+            border-bottom: 1px solid #ffeaa7;
+            font-size: 12px;
+            color: #856404;
+        }
+
+        .api-url input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            font-size: 12px;
+            background: white;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.bot .message-bubble {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .products-container {
+            margin-top: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+
+        .product-info {
+            padding: 12px;
+        }
+
+        .product-brand {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 4px;
+        }
+
+        .product-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .product-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .metadata {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #495057;
+        }
+
+        .metadata-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .loading {
+            display: flex;
+            gap: 5px;
+            padding: 12px 16px;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 24px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .input-area input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-area button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .input-area button:hover {
+            transform: scale(1.05);
+        }
+
+        .input-area button:active {
+            transform: scale(0.95);
+        }
+
+        .input-area button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 10px 20px;
+            font-size: 14px;
+        }
+
+        .timestamp {
+            font-size: 11px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>패션 챗봇 테스트</h1>
+            <p>하이브리드 검색 기반 RAG 챗봇</p>
+        </div>
+
+        <div class="settings">
+            <label for="temp">체감온도 (°C):</label>
+            <input type="number" id="temp" placeholder="예: 15" step="0.1">
+            <span style="font-size: 12px; color: #6c757d;">선택사항 - 날씨 기반 추천에 사용</span>
+        </div>
+
+        <div class="api-url">
+            <label style="font-weight: 600; margin-bottom: 5px; display: block;">API URL:</label>
+            <input type="text" id="apiUrl" value="http://localhost:8000/ai/chatbot/chat">
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="message-bubble">
+    안녕하세요! 저는 패션 전문 AI 어시스턴트입니다. 😊
+
+    다음과 같은 도움을 드릴 수 있습니다:
+    • 의류 검색 및 추천
+    • 날씨에 맞는 코디 제안
+    • 상품 정보 문의
+    • 트렌드 정보 제공
+
+    무엇을 도와드릴까요?
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input
+                type="text"
+                id="messageInput"
+                placeholder="메시지를 입력하세요... (예: 겨울에 입을 따뜻한 코트 추천해줘)"
+                onkeypress="if(event.key === 'Enter') sendMessage()"
+            >
+            <button onclick="sendMessage()" id="sendButton">전송</button>
+        </div>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const tempInput = document.getElementById('temp');
+            const apiUrlInput = document.getElementById('apiUrl');
+            const sendButton = document.getElementById('sendButton');
+            const chatMessages = document.getElementById('chatMessages');
+
+            const message = input.value.trim();
+            if (!message) return;
+
+            const apparentTemp = tempInput.value ? parseFloat(tempInput.value) : null;
+            const apiUrl = apiUrlInput.value.trim();
+
+            // 사용자 메시지 표시
+            addMessage('user', message);
+            input.value = '';
+
+            // 로딩 표시
+            const loadingId = addLoading();
+            sendButton.disabled = true;
+
+            try {
+                const requestBody = {
+                    message: message
+                };
+
+                if (apparentTemp !== null && !isNaN(apparentTemp)) {
+                    requestBody.apparent_temp = apparentTemp;
+                }
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                removeLoading(loadingId);
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // 봇 응답 표시
+                addMessage('bot', data.message, data.products, data.metadata, data.timestamp);
+
+            } catch (error) {
+                removeLoading(loadingId);
+                addError(`오류 발생: ${error.message}`);
+                console.error('Error:', error);
+            } finally {
+                sendButton.disabled = false;
+            }
+        }
+
+        function addMessage(sender, text, products = null, metadata = null, timestamp = null) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+
+            let content = `<div class="message-bubble">${escapeHtml(text)}`;
+
+            if (timestamp) {
+                content += `<div class="timestamp">${new Date(timestamp).toLocaleString('ko-KR')}</div>`;
+            }
+
+            content += `</div>`;
+
+            // 상품 카드 추가
+            if (products && products.length > 0) {
+                content += '<div class="products-container">';
+                products.forEach(product => {
+                    content += `
+                        <div class="product-card">
+                            <img src="${product.representative_image_url}"
+                                 alt="${escapeHtml(product.name)}"
+                                 class="product-image"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23ddd%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%23999%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E'">
+                            <div class="product-info">
+                                <div class="product-brand">${escapeHtml(product.brand)}</div>
+                                <div class="product-name" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</div>
+                                <div class="product-price">${product.original_price.toLocaleString()}원</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                content += '</div>';
+            }
+
+            // 메타데이터 추가 (디버깅용)
+            if (metadata) {
+                content += `
+                    <div class="metadata">
+                        <div class="metadata-title">🔍 검색 정보</div>
+                        <div>의도: ${metadata.intent || 'N/A'}</div>
+                        ${metadata.search_query ? `<div>검색어: ${escapeHtml(metadata.search_query)}</div>` : ''}
+                        ${metadata.filters ? `<div>필터: ${JSON.stringify(metadata.filters)}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            messageDiv.innerHTML = content;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addLoading() {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot';
+            const loadingId = 'loading-' + Date.now();
+            messageDiv.id = loadingId;
+            messageDiv.innerHTML = `
+                <div class="message-bubble loading">
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                </div>
+            `;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return loadingId;
+        }
+
+        function removeLoading(loadingId) {
+            const loadingElement = document.getElementById(loadingId);
+            if (loadingElement) {
+                loadingElement.remove();
+            }
+        }
+
+        function addError(errorMessage) {
+            const chatMessages = document.getElementById('chatMessages');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = errorMessage;
+            chatMessages.appendChild(errorDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 엔터키로 전송
+        document.getElementById('messageInput').focus();
+    </script>
+</body>
+</html>

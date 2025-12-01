@@ -1,0 +1,40 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /var/lib/promtail/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 10s
+    pipeline_stages:
+      - docker: {}                  # 도커 JSON 파싱
+    relabel_configs:
+      # 컨테이너 이름을 container 라벨로
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      # compose 서비스명/프로젝트명 라벨도 살아있으면 달아두기
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'compose_service'
+        action: replace
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
+        target_label: 'compose_project'
+        action: replace
+      # 기본 job 라벨 고정
+      - target_label: job
+        replacement: 'docker'
+
+  # 4-2) 호스트 /var/log/* (원하면 사용)
+  - job_name: varlogs
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: varlogs
+          __path__: /var/log/*.log

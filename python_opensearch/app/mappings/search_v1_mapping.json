@@ -1,0 +1,69 @@
+{
+    "settings": {
+        "index": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0,
+            "analysis": {
+                "filter": {
+                    "korean_stopwords": {
+                        "type": "stop",
+                        "stopwords": [
+                            "은", "는", "이", "가", "을", "를", "에", "에서", "의", "와", "으로", "으로", "다", "된", "있", "수", "있다", "것", "한"
+                        ]
+                    },
+                    "nori_noun_filter": {
+                        "type": "nori_part_of_speech",
+                        "stoptags": [
+                            "VV",
+                            "VA",
+                            "VX",
+                            "VCP",
+                            "VCN",
+                            "J",
+                            "E",
+                            "XPN",
+                            "XSV",
+                            "XSA"
+                        ]
+                    }
+                },
+                "analyzer": {
+                    "korean_analyzer": {
+                        "type": "custom",
+                        "tokenizer": "nori_tokenizer",
+                        "filter": [
+                            "lowercase",
+                            "korean_stopwords",
+                            "nori_noun_filter"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "query": {
+                "type": "text",
+                "analyzer": "korean_analyzer",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "count": {
+                "type": "integer"
+            },
+            "created_at": {
+                "type": "date"
+            },
+            "updated_at": {
+                "type": "date"
+            },
+            "last_ranking": {
+                "type": "integer"
+            }
+        }
+    }
+}

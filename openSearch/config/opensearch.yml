@@ -1,0 +1,36 @@
+cluster.name: opensearch-cluster
+node.name: opensearch
+network.host: 0.0.0.0
+
+# 단일 노드 (클러스터 비활성)
+discovery.type: single-node
+
+# 인증 및 보안 관련 (admin 패스워드는 compose에서 설정됨)
+plugins.security.disabled: true
+
+# 인덱스 및 클러스터 안정성 설정 (선택)
+cluster.routing.allocation.disk.threshold_enabled: true
+cluster.routing.allocation.disk.watermark.low: 85%
+cluster.routing.allocation.disk.watermark.high: 90%
+cluster.routing.allocation.disk.watermark.flood_stage: 95%
+
+# 로그 경로
+path.logs: /usr/share/opensearch/logs
+path.data: /usr/share/opensearch/data
+
+# 스냅샷 경로 (compose에서 /mnt/snapshots 마운트됨)
+path.repo: ["/mnt/snapshots"]
+
+# 성능 관련 (필요시)
+indices.memory.index_buffer_size: 10%
+thread_pool.search.size: 8
+thread_pool.write.size: 4
+
+# opensearch.yml 파일 하단에 추가
+
+# -------------------------------------------------------
+# 🛡️ 보안 설정: 내부 통신용으로 TLS(HTTPS)를 HTTP로 비활성화
+# -------------------------------------------------------
+# plugins.security.ssl.http.enabled: false
+# plugins.security.ssl.transport.enabled: false
+# plugins.security.allow_default_init_securityindex: true

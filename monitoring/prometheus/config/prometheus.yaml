@@ -1,0 +1,101 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 15s
+  evaluation_interval: 2m
+  external_labels:
+    monitor: 'codelab-monitor'
+  query_log_file: /prometheus/query.log
+
+rule_files:
+  - "rule.yaml"
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['prometheus:9090']
+    
+  - job_name: 'node-local'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          alias: 'service'               # NOTE: Grafana에 깔끔히 보이도록 별칭 부여
+    relabel_configs:
+      - source_labels: [alias]
+        target_label: instance            # NOTE: alias 값을 instance 라벨로 덮어쓰기
+
+  - job_name: loki
+    static_configs:
+      - targets: ['loki:3100']
+
+  # # NOTE: 서버_2(Node Exporter)에 대한 스크랩  추가
+  # - job_name: 'node-remote_engineering'
+  #   scrape_interval: 15s
+  #   static_configs:
+  #     - targets: ['j13b102a.p.ssafy.io:9100']       
+  #       labels:
+  #         alias: 'engineering'
+  #   relabel_configs:
+  #     - source_labels: [alias]
+  #       target_label: instance  
+
+  # - job_name: 'node-remote_standby'
+  #   scrape_interval: 15s
+  #   static_configs:
+  #     - targets: ['52.78.128.129:9100']   # 다른 계정 EC2 퍼블릭 IP
+  #       labels:
+  #         alias: 'standby'
+  #   relabel_configs:
+  #     - source_labels: [alias]
+  #       target_label: instance 
+
+
+
+
+
+
+#아래는 standby server용
+
+# global:
+#   scrape_interval: 15s
+#   scrape_timeout: 15s
+#   evaluation_interval: 2m
+#   external_labels:
+#     monitor: 'codelab-monitor'
+#   query_log_file: /prometheus/query.log
+
+# rule_files:
+#   - "rule.yaml"
+
+# scrape_configs:
+#   - job_name: prometheus
+#     static_configs:
+#       - targets: ['prometheus:9090']
+    
+#   - job_name: 'node-local'
+#     static_configs:
+#       - targets: ['node-exporter:9100']
+#         labels:
+#           alias: 'standby server'               # NOTE: Grafana에 깔끔히 보이도록 별칭 부여
+#     relabel_configs:
+#       - source_labels: [alias]
+#         target_label: instance            # NOTE: alias 값을 instance 라벨로 덮어쓰기
+
+#   - job_name: 'node-remote_engineering'
+#     scrape_interval: 15s
+#     static_configs:
+#       - targets: ['j13b102a.p.ssafy.io:9100']   # 다른 계정 EC2 퍼블릭 IP
+#         labels:
+#           alias: 'engeineering server'
+#     relabel_configs:
+#       - source_labels: [alias]
+#         target_label: instance
+
+#   - job_name: 'node-remote_service'
+#     scrape_interval: 15s
+#     static_configs:
+#       - targets: ['j13b102.p.ssafy.io:9100']   # 다른 계정 EC2 퍼블릭 IP
+#         labels:
+#           alias: 'service server'
+#     relabel_configs:
+#       - source_labels: [alias]
+#         target_label: instance 

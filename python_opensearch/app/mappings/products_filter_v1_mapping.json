@@ -1,0 +1,48 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    }
+  },
+  "mappings": {
+    "properties": {
+      "product_url": {
+        "type": "keyword",
+        "index": false
+      },
+      "product_id": {
+        "type": "keyword"
+      },
+      "brand": {
+        "type": "keyword"
+      },
+      "gender": {
+        "type": "keyword"
+      },      
+      "large_category": {
+        "type": "keyword"
+      },
+      "small_category": {
+        "type": "keyword"
+      },
+      "name": {
+        "type": "keyword"
+      },
+      "original_price": {
+        "type": "keyword"
+      },
+      "colors": {
+        "type": "keyword"
+      },
+      "image_urls": {
+        "type": "keyword",
+        "index": false
+      },
+      "representative_image_url": {
+        "type": "keyword",
+        "index": false
+      }
+    }
+  }
+}

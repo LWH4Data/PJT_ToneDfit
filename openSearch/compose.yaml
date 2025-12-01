@@ -1,0 +1,144 @@
+# ===========================================================
+# 🧱 OpenSearch (단일 노드)
+#  - Lucene 기반 검색엔진
+#  - REST API 포트 9200, Performance Analyzer 9600 (내부용)
+#  - 운영환경에서는 Nginx → FastAPI → OpenSearch 흐름
+# ===========================================================
+
+services:
+  opensearch:
+    build:
+    # image: opensearchproject/opensearch:2.19.3
+      context: .
+      dockerfile: Dockerfile
+      args: 
+        OPENSEARCH_VERSION: 2.19.3
+    container_name: opensearch
+    restart: unless-stopped
+
+    # -------------------------------------------------------
+    # ⚙️ 리소스 제약 및 JVM 설정
+    # -------------------------------------------------------
+    
+    mem_limit: 6g # (컨테이너 전체 메모리 한도), 최적화 후 관리.
+    environment:
+      - discovery.type=single-node       # 단일 노드 모드
+      - node.name=opensearch             # 노드명 (클러스터 내 유일)
+      # - bootstrap.memory_lock=true       # JVM 힙 스와핑 방지
+      - OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g   # JVM 힙 최소/최대 2GB
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
+    ulimits:
+    #   memlock: { soft: -1, hard: -1 }    # 메모리 잠금 무제한
+      nofile:  { soft: 65536, hard: 65536 } # 파일 핸들 개수 제한
+
+    # -------------------------------------------------------
+    # 📂 볼륨 매핑
+    # -------------------------------------------------------
+    # - data: Lucene 인덱스/segment 저장 (영구 볼륨)
+    # - config: 노드 및 클러스터 설정(opensearch.yml)
+    # - analysis: 사용자 정의 분석기 (동의어, 불용어 등)
+    # - logs: 로그 출력 바인드
+    # - snapshots: 스냅샷 백업용 경로
+    # -------------------------------------------------------
+    volumes:
+      # 📦 데이터(영구)
+      - opensearch-data:/usr/share/opensearch/data
+
+      # ⚙️ 설정/사전/로그/스냅샷(바인드)
+      - ./config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml:ro
+      - ./config/log4j2.properties:/usr/share/opensearch/config/log4j2.properties:ro
+      - ./analysis:/usr/share/opensearch/config/analysis:ro
+      - ./logs:/usr/share/opensearch/logs
+      - ./snapshots:/mnt/snapshots
+
+      # 🗺️ 매핑/템플릿/파이프라인(바인드, 읽기전용 권장)
+      - ./mappings:/usr/share/opensearch/config/mappings:ro
+
+      # 🐍 개발 코드(바인드, 실시간 반영)
+      #   컨테이너 내부 작업 경로를 /workspace 로 통일
+      - ./python:/workspace
+    # -------------------------------------------------------
+    # 🌐 네트워크 설정
+    # -------------------------------------------------------
+    #  - 외부 포트는 Nginx를 통해만 접근 (직접 노출 금지)
+    #  - 내부 네트워크 내에서 FastAPI ↔ OpenSearch 통신
+    # -------------------------------------------------------
+    networks:
+      - ${NETWORK_NAME}
+
+    # -------------------------------------------------------
+    # 🧠 커널 파라미터 (Lucene mmap 성능용)
+    # -------------------------------------------------------
+    # 디스크 사용시 메모리에 올릴 데이터 단위.
+    #   - 메모리만 사용할 시 필요없지만 우선 설정.
+    #   - 컨테이너 가동 시점에서는 OS에 접근 권한이 없어 실패
+    #     → CLI 환경에서 "vm.max_map_count = 262144"로 직접 변경
+    # sysctls:
+    #   vm.max_map_count: "262144"
+
+    # -------------------------------------------------------
+    # 💓 Healthcheck
+    # -------------------------------------------------------
+    #  - admin 계정으로 HTTP 200/401 응답 시 정상
+    #  - 컨테이너 상태 감시 및 오케스트레이션 연동용
+    # -------------------------------------------------------
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -k -u admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD} http://localhost:9200 -o /dev/null -w '%{http_code}' | grep -qE '200|401'"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+
+  # ==============================================
+  # 🧰 os-init (일회성) : 스냅샷 리포지토리 & SLM 정책 등록
+  #  - opensearch가 Healthy해지면 REST API로 자동 등록 후 종료
+  # ==============================================
+  os-init:
+    image: curlimages/curl:8.10.1
+    container_name: os-init
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    networks:
+      - ${NETWORK_NAME}
+    entrypoint: ["/bin/sh","-c"]
+    environment:
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
+    command: |
+      set -e
+      OS="http://opensearch:9200"
+      AUTH="admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
+      HDR="Content-Type: application/json"
+
+      echo ">> wait for OS API"
+      until curl -s "$$OS" -o /dev/null; do sleep 2; done
+
+      echo ">> register snapshot repository"
+      curl -s -H "$$HDR" -X PUT "$$OS/_snapshot/local_backup" \
+        -d '{"type":"fs","settings":{"location":"/mnt/snapshots"}}'
+
+      echo ">> put SLM weekly policy"
+      curl -s -H "$$HDR" -X PUT "$$OS/_slm/policy/weekly-snapshot" \
+        -d '{
+          "schedule": "0 0 0 */7 * ?",
+          "name": "<snapshot-{now/d}>",
+          "repository": "local_backup",
+          "config": { "indices": ["*"], "ignore_unavailable": true },
+          "retention": { "expire_after": "7d", "min_count": 1, "max_count": 7 }
+        }'
+
+      echo ">> done"
+# ===========================================================
+# 🌐 네트워크 정의
+#  - 외부 서비스(Nginx, FastAPI 등)와 연결될 사용자 정의 네트워크
+# ===========================================================
+networks:
+  ToneDfit:
+    external: true
+    name: ${NETWORK_NAME}
+
+# ===========================================================
+# 💾 볼륨 정의
+#  - Docker 볼륨으로 데이터 영구 저장
+# ===========================================================
+volumes:
+  opensearch-data:

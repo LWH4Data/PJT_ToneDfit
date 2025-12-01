@@ -1,0 +1,26 @@
+### Spring Boot Project Build Artifacts ###
+target/
+build/
+!**/target/*.jar    # Maven의 경우
+!**/build/libs/*.jar # Gradle의 경우 (JAR 파일 복사 시)
+
+### IDE and Build Tool Specifics ###
+.gradle/
+.mvn/
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings
+
+### Version Control and Logs ###
+.git
+.gitignore
+.DS_Store
+logs/
+temp/
+tmp/
+
+### Sensitive Files (if present in source) ###
+.env

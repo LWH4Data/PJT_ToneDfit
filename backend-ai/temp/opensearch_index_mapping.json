@@ -1,0 +1,56 @@
+{
+  "settings": {
+    "index": {
+      "knn": true,
+      "knn.algo_param.ef_search": 100,
+      "number_of_shards": 1,
+      "number_of_replicas": 1
+    }
+  },
+  "mappings": {
+    "properties": {
+      "product_id": {
+        "type": "keyword"
+      },
+      "product_name": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "image_url": {
+        "type": "keyword"
+      },
+      "price": {
+        "type": "integer"
+      },
+      "brand": {
+        "type": "keyword"
+      },
+      "category": {
+        "type": "keyword"
+      },
+      "image_embedding": {
+        "type": "knn_vector",
+        "dimension": 512,
+        "method": {
+          "name": "hnsw",
+          "space_type": "cosinesimil",
+          "engine": "nmslib",
+          "parameters": {
+            "ef_construction": 128,
+            "m": 16
+          }
+        }
+      },
+      "created_at": {
+        "type": "date"
+      },
+      "updated_at": {
+        "type": "date"
+      }
+    }
+  }
+}

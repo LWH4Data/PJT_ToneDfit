@@ -1,0 +1,155 @@
+{
+    "settings": {
+        "index": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0,
+            "knn": true,
+            "analysis": {
+                "analyzer": {
+                    "korean_analyzer": {
+                        "type": "custom",
+                        "tokenizer": "nori_tokenizer",
+                        "filter": [
+                            "lowercase",
+                            "nori_part_of_speech"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "product_url": {
+                "type": "keyword",
+                "index": false
+            },
+            "product_id": {
+                "type": "keyword"
+            },
+            "brand": {
+                "type": "keyword",
+                "fields": {
+                    "search": {
+                        "type": "text",
+                        "analyzer": "korean_analyzer"
+                    }
+                }
+            },
+            "gender": {
+                "type": "keyword"
+            },
+            "large_category": {
+                "type": "keyword",
+                "fields": {
+                    "search": {
+                        "type": "text",
+                        "analyzer": "korean_analyzer"
+                    }
+                }
+            },
+            "small_category": {
+                "type": "keyword",
+                "fields": {
+                    "search": {
+                        "type": "text",
+                        "analyzer": "korean_analyzer"
+                    }
+                }
+            },
+            "name": {
+                "type": "text",
+                "analyzer": "korean_analyzer",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "original_price": {
+                "type": "long"
+            },
+            "fabrics": {
+                "type": "keyword",
+                "fields": {
+                    "search": {
+                        "type": "text",
+                        "analyzer": "korean_analyzer"
+                    }
+                }
+            },
+            "colors": {
+                "type": "keyword",
+                "fields": {
+                    "search": {
+                        "type": "text",
+                        "analyzer": "korean_analyzer"
+                    }
+                }
+            },
+            "sizes": {
+                "type": "keyword",
+                "fields": {
+                    "search": {
+                        "type": "text",
+                        "analyzer": "korean_analyzer"
+                    }
+                }
+            },
+            "image_urls": {
+                "type": "keyword",
+                "index": false
+            },
+            "representative_image_url": {
+                "type": "keyword",
+                "index": false
+            },
+            "reviews": {
+                "type": "nested",
+                "properties": {
+                    "date": {
+                        "type": "date",
+                        "format": "yyyy-MM-dd"
+                    },
+                    "rating": {
+                        "type": "float"
+                    },
+                    "option": {
+                        "type": "keyword"
+                    },
+                    "body_shape": {
+                        "type": "keyword"
+                    },
+                    "size_fit": {
+                        "type": "keyword"
+                    },
+                    "content": {
+                        "type": "text",
+                        "analyzer": "korean_analyzer",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword"
+                            }
+                        }
+                    },
+                    "image_urls": {
+                        "type": "keyword",
+                        "index": false
+                    }
+                }
+            },
+            "embedding": {
+                "type": "knn_vector",
+                "dimension": 384,
+                "method": {
+                    "name": "hnsw",
+                    "space_type": "cosinesimil",
+                    "parameters": {
+                        "ef_construction": 512,
+                        "m": 16
+                    }
+                }
+            }
+        }
+    }
+}

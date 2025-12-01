@@ -1,0 +1,17 @@
+{
+	"ulid": "01KAW1H84R4V1TBSZV8G6HK86M",
+	"minTime": 1764014402942,
+	"maxTime": 1764021600000,
+	"stats": {
+		"numSamples": 2104320,
+		"numSeries": 4384,
+		"numChunks": 17538
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01KAW1H84R4V1TBSZV8G6HK86M"
+		]
+	},
+	"version": 1
+}

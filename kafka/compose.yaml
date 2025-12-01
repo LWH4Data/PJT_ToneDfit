@@ -1,0 +1,179 @@
+# ───────────────────────────────────────────────────────────────────────────────
+# 0) GLOBAL: NETWORKS & VOLUMES
+# ───────────────────────────────────────────────────────────────────────────────
+networks:
+  ToneDfit:
+    external: true
+    name: ${NETWORK_NAME}
+
+volumes:
+  kafka1_data:
+  kafka2_data:
+  kafka3_data:
+
+services:
+  # ───────────────────────────────────────────────────────────────────────────
+  # KAFKA NODE 1 (controller,broker) — 외부 포트 공개
+  # ───────────────────────────────────────────────────────────────────────────
+  kafka-1:
+    image: apache/kafka:4.0.1
+    container_name: kafka-1
+    # ⚠️ 내부 전용이므로 외부 포트 매핑(ports) 없음, 외부 필요할 때만 open
+    # ports:
+    #   - "${BROKER_PORT}:${BROKER_PORT}"
+    environment:
+      # (A) 아이덴티티 & 롤
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "controller,broker"
+
+      # (B) 리스너 (컨트롤러 / 내부 / 외부)
+      KAFKA_LISTENERS: "CONTROLLER://:9093,PLAINTEXT://:19092"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-1:19092"
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+
+      # (C) 쿼럼 / 클러스터
+      CLUSTER_ID: "${KAFKA_CLUSTER_ID}"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093"
+      KAFKA_CLUSTER_ID: "${KAFKA_CLUSTER_ID}"
+
+      # (D) 스토리지 & 퍼포먼스
+      KAFKA_LOG_DIRS: ${KAFKA_DATA_PATH}
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_HEAP_OPTS: "${KAFKA_HEAP_OPTS}"
+
+      # (E) 복제 설정 (3노드 기준)
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+
+      # (F) 로그 설정
+      KAFKA_LOG4J_OPTS: "-Dlog4j.configurationFile=file:/etc/kafka/log4j2-kafka.yaml"
+
+    volumes:
+      - kafka1_data:${KAFKA_DATA_PATH}
+      - ./logging/log4j2-kafka.yaml:/etc/kafka/log4j2-kafka.yaml:ro
+      - ./logs/kafka-1:/var/log/kafka
+
+    networks:
+      - ${NETWORK_NAME}
+
+    healthcheck:
+      test: ["CMD-SHELL", "bash -lc 'exec 3<>/dev/tcp/127.0.0.1/19092 && echo ok || exit 1'"]
+      interval: 20s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+    restart: unless-stopped
+
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # KAFKA NODE 2 (controller,broker)
+  # ───────────────────────────────────────────────────────────────────────────
+  kafka-2:
+    image: apache/kafka:4.0.1
+    container_name: kafka-2
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: "controller,broker"
+
+      KAFKA_LISTENERS: "CONTROLLER://:9093,PLAINTEXT://:19092"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-2:19092"
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093"
+      KAFKA_CLUSTER_ID: "${KAFKA_CLUSTER_ID}"
+      CLUSTER_ID: "${KAFKA_CLUSTER_ID}"
+
+      KAFKA_LOG_DIRS: ${KAFKA_DATA_PATH}
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_HEAP_OPTS: "${KAFKA_HEAP_OPTS}"
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+
+      # kafka-2, kafka-3.environment
+      KAFKA_LOG4J_OPTS: "-Dlog4j.configurationFile=file:/etc/kafka/log4j2-kafka.yaml"
+
+
+    volumes:
+      - kafka2_data:${KAFKA_DATA_PATH}
+      - ./logging/log4j2-kafka.yaml:/etc/kafka/log4j2-kafka.yaml:ro
+      - ./logs/kafka-2:/var/log/kafka
+
+    networks:
+      - ${NETWORK_NAME}
+
+    depends_on:
+      - kafka-1
+
+    healthcheck:
+      test: ["CMD-SHELL", "bash -lc 'exec 3<>/dev/tcp/127.0.0.1/19092 && echo ok || exit 1'"]
+      interval: 20s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+    restart: unless-stopped
+
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # KAFKA NODE 3 (controller,broker)
+  # ───────────────────────────────────────────────────────────────────────────
+  kafka-3:
+    image: apache/kafka:4.0.1
+    container_name: kafka-3
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: "controller,broker"
+
+      KAFKA_LISTENERS: "CONTROLLER://:9093,PLAINTEXT://:19092"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-3:19092"
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093"
+      KAFKA_CLUSTER_ID: "${KAFKA_CLUSTER_ID}"
+      CLUSTER_ID: "${KAFKA_CLUSTER_ID}"
+
+      KAFKA_LOG_DIRS: ${KAFKA_DATA_PATH}
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_HEAP_OPTS: "${KAFKA_HEAP_OPTS}"
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+
+      # kafka-2, kafka-3.environment
+      KAFKA_LOG4J_OPTS: "-Dlog4j.configurationFile=file:/etc/kafka/log4j2-kafka.yaml"
+
+
+    volumes:
+      - kafka3_data:${KAFKA_DATA_PATH}
+      - ./logging/log4j2-kafka.yaml:/etc/kafka/log4j2-kafka.yaml:ro
+      - ./logs/kafka-3:/var/log/kafka
+
+    networks:
+      - ${NETWORK_NAME}
+
+    depends_on:
+      - kafka-1
+      - kafka-2
+
+    healthcheck:
+      test: ["CMD-SHELL", "bash -lc 'exec 3<>/dev/tcp/127.0.0.1/19092 && echo ok || exit 1'"]
+      interval: 20s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+    restart: unless-stopped

@@ -1,0 +1,26 @@
+services:
+  python_kafka:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: python_kafka
+    env_file:
+      - .env
+    networks:
+      - ToneDfit
+    volumes:
+      - ./app:/app         # 로컬 코드 ↔ 컨테이너 /app
+    restart: unless-stopped
+    command: >
+      bash -lc "
+        if [ -f /app/requirements.txt ]; then
+          pip install --no-cache-dir -r /app/requirements.txt || true;
+        fi;
+        echo '[DEV] Ready. Write code in ./app; run it manually inside the container.';
+        tail -f /dev/null
+      "
+
+networks:
+  ToneDfit:
+    external: true
+    name: ${NETWORK_NAME}

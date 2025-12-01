@@ -1,0 +1,2 @@
+-- 컨테이너 최초 초기화 시 1회 실행
+-- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

@@ -1,0 +1,9 @@
+torch
+torchvision
+transformers
+pillow
+numpy
+tqdm
+requests
+rembg
+onnxruntime       # (CPU rembg용)
